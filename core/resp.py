@@ -7,10 +7,12 @@ def read_simple_string(data):
         buff.append(data[idx])
         idx += 1
     return "".join(buff), idx + 2
-    
+
+
 def read_error(data):
     return read_simple_string(data)
-    
+
+
 def read_int_64(data):
     # First char for int is :
     idx = 1
@@ -18,15 +20,15 @@ def read_int_64(data):
     while idx < len(data) and data[idx] != '\r':
         n = n * 10 + int(data[idx])
         idx += 1
-    return n, idx + 2 
-    
-    
+    return n, idx + 2
+
+
 def read_bulk_string(data):
     # Bulk strings start with a $ followed by length
     length, idx = read_int_64(data)
-    return "".join(data[idx:idx+length]), idx + 2
-    
-    
+    return "".join(data[idx:idx + length]), idx + 2
+
+
 def read_array(data):
     # Arrays start with *
     length, idx = read_int_64(data)
@@ -36,7 +38,8 @@ def read_array(data):
         out[i] = ele
         idx += offset
     return out, idx
-    
+
+
 def decode_helper(data):
     if len(data) == 0:
         return None, 0
@@ -53,13 +56,14 @@ def decode_helper(data):
             return read_array(data)
         case _:
             return None, 0
-            
+
 
 def decode(data):
     if len(data) == 0:
         return None
     value, _ = decode_helper(data)
     return value
+
 
 # TODO : Move tests to unittest
 print(decode("+OK\r\n"))
@@ -73,4 +77,3 @@ print(decode("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n"))
 print(decode("*3\r\n:1\r\n:2\r\n:3\r\n"))
 print(decode("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$5\r\nhello\r\n"))
 print(decode("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n"))
-

@@ -1,21 +1,23 @@
 import socket
 
+
 class SyncTCPServer:
     def __init__(self, host: str, port: str):
         self.host = host
         self.port = port
-    
 
-    def __read_command(self, c: socket):
+    @staticmethod
+    def __read_command(c: socket):
         data = c.recv(1024)
-        print(f"Received: {data}")
+        print(f'Received: {data}')
         return data
 
-    def __respond(self, cmd: str, c: socket):
+    @staticmethod
+    def __respond(cmd: str, c: socket):
         c.sendall(cmd)
 
     def run_sync_tcp_server(self):
-        print(f"Starting a synchronou TCP server on HOST: {self.host}, PORT: {self.port}")
+        print(f'Starting a synchronous TCP server on HOST: {self.host}, PORT: {self.port}')
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.host, self.port))
             s.listen()
