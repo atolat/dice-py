@@ -1,6 +1,6 @@
 # Import the library
 import argparse
-from server import sync_tcp_server
+from src.server import sync_tcp_server
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
 PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
