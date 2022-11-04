@@ -5,23 +5,26 @@ from src.core.custom_types.redis_command import RedisCommand
 from src.core.resp import resp_encode
 
 
-def eval_ping(args: List[str], c: socket):
-    print(f"I'm in eval ping with args -- {args}")
+class EvalException(Exception):
+    pass
+
+
+def eval_ping_v2(args: List[str]):
     if len(args) > 1:
-        raise Exception("ERR wrong number of arguments for 'ping' command")
+        print(f'Encoding BAD args for ping -- {args}')
+        raise EvalException("ERR wrong number of arguments for 'ping' command")
     if len(args) == 0:
-        print(f"I'm stuck in eval ping, my args are {args}")
-        c.sendall(resp_encode("PONG", False))
+        encoded_data = resp_encode("PONG", False)
+        return encoded_data
     else:
-        print(f"I'm stuck in eval ping, my args are {args}")
-        c.sendall(resp_encode(args[0], True))
+        print(f'Encoding args for ping -- {args}')
+        encoded_data = resp_encode(args[0], True)
+        return encoded_data
 
 
-def eval_and_respond(cmd: RedisCommand, c: socket):
-    print(f'command received in eval and respond: {cmd.cmd}')
+def eval_and_respond_v2(cmd: RedisCommand):
     match cmd.cmd:
         case 'PING':
-            return eval_ping(cmd.args, c)
+            return eval_ping_v2(cmd.args)
         case _:
-            print("I'm not PING")
-            return eval_ping(cmd.args, c)
+            return eval_ping_v2(cmd.args)

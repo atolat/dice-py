@@ -1,58 +1,66 @@
 import socket
+import sys
+
 from src.core.custom_types.redis_command import *
-from src.core.eval import eval_and_respond
+from src.core.eval import eval_and_respond_v2, EvalException
 from src.core.resp import resp_decode
 
 
-def _respond_error(error, c):
-    c.sendall(str.encode(f'-{error}\r\n'))
+def _respond_error(error):
+    return str.encode(f'-{error}\r\n')
 
 
-class SyncTCPServer:
-    def __init__(self, host: str, port: str):
-        self.host = host
-        self.port = port
+def _read_command(data) -> (RedisCommand, str):
+    decoded_data = resp_decode(data)
+    cmd = "COMMAND"
+    args = ""
+    if decoded_data:
+        cmd, args = decoded_data[0], decoded_data[1:]
+    return RedisCommand(cmd=cmd.upper(), args=args)
 
-    @staticmethod
-    def _read_command(data, c: socket) -> (RedisCommand, str):
-        # data = c.recv(1024)
-        print(f'Received: {data}')
-        decoded_data = resp_decode(data)
-        cmd = "COMMAND"
-        args = ["ARGS"]
-        if decoded_data:
-            cmd, args = decoded_data[0], decoded_data[1:]
-        print(f'COMMAND--{cmd}, ARGS -- {args}')
-        return RedisCommand(cmd=cmd.upper(), args=args)
 
-    @staticmethod
-    def _respond(cmd: RedisCommand, c: socket):
-        try:
-            eval_and_respond(cmd, c)
-        except Exception as e:
-            _respond_error(str(e), c)
+def _respond_v2(cmd: RedisCommand):
+    try:
+        to_send = eval_and_respond_v2(cmd)
+        return to_send
+    except Exception as e:
+        raise e
 
-    def run_sync_tcp_server(self):
-        print(f'Starting a synchronous TCP server on HOST: {self.host}, PORT: {self.port}')
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((self.host, self.port))
-            s.listen()
-            conn, addr = s.accept()
-            with conn:
-                print(f"Connected by {addr}")
+
+def run_sync_tcp_server_v2(host, port):
+    print(f'Starting a synchronous TCP server on HOST: {host}, PORT: {port}')
+    con_clients = 0
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, port))
+    sock.listen(5)
+    try:
+        while True:
+            try:
+                c, address = sock.accept()
+                print("Connected from", address)
+                con_clients += 1
                 while True:
-                    # try:
-                    #     data = self._read_command(conn)
-                    #     if not data:
-                    #         break
-                    #     self._respond(data, conn)
-                    # except Exception as e:
-                    #     print(f"Something went wrong -- {e}")
-                    #     # raise e
-                    print(f"Connected by {addr}")
-                    data = conn.recv(1024)
-                    print(f"AHHHA--{data.decode('utf-8')}")
-                    # if not data or data.decode('utf-8') == '':
-                    #     break
-                    cmd = self._read_command(data, conn)
-                    self._respond(cmd, conn)
+                    try:
+                        data = c.recv(1024)
+                        if not data:
+                            break
+                        # Try to decode the data to a redis command
+                        cmd = _read_command(data)
+                        response = _respond_v2(cmd)
+                        c.send(response)
+                    except EvalException as ee:
+                        c.send(_respond_error(str(ee)))
+                        print(f"Exception while reading or decoding data, more info - {ee}")
+                    except Exception as e:
+                        c.send(_respond_error(str(e)))
+                        print(f"Exception while reading or decoding data, more info - {e}")
+                c.close()
+                con_clients -= 1
+                print("Disconnected from", address)
+            except KeyboardInterrupt as ke:
+                print("Received a keyboard interrupt, exiting gracefully")
+                con_clients -= 1
+                sock.close()
+                sys.exit(0)
+    finally:
+        sock.close()

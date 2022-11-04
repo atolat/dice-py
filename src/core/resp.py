@@ -65,14 +65,13 @@ def _decode_helper(data: str, datatype=None):
         case '*', 'array':
             return _read_array(data)
         case _:
-            return None, 0
+            return "", 0
 
 
 def resp_decode(data: bytes, datatype=None):
     if len(data) == 0:
         return ""
     data = data.decode('utf-8')
-    print('decoded', data)
     value, _ = _decode_helper(data, datatype)
     return value
 
