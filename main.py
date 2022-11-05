@@ -5,6 +5,7 @@ from configparser import ConfigParser
 import socket
 
 from src.server import sync_tcp_server
+from src.server.async_tcp_server import run_async_tcp_server
 from src.server.sync_tcp_server import run_sync_tcp_server_v2
 
 
@@ -25,7 +26,7 @@ def main():
     parser.add_argument('--host', type=str, default=host)
     parser.add_argument('--port', type=int, default=port)
     args = parser.parse_args()
-    run_sync_tcp_server_v2(args.host, args.port)
+    run_async_tcp_server(args.host, args.port)
 
 
 if __name__ == '__main__':
