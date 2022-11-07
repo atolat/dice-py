@@ -76,13 +76,15 @@ def resp_decode(data: bytes, datatype=None):
     return value
 
 
-def resp_encode(data, is_bulk):
+def resp_encode(data, is_bulk=False):
     match data:
         case str():
             if not is_bulk:
                 return str.encode(f'+{data}\r\n')
             else:
                 return str.encode(f'${len(data)}\r\n{data}\r\n')
+        case int():
+            return str.encode(f':{data}\r\n')
         case _:
             return str.encode('')
 

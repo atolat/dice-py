@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from src.core.custom_types.redis_command import RedisCommand
-from src.core.eval import eval_and_respond_v2
-from src.core.resp import resp_decode
+from core.custom_types.redis_command import RedisCommand
+from core.eval import eval_and_respond
+from core.resp import resp_decode
 
 
 class TCPServer(ABC):
@@ -23,7 +23,7 @@ class TCPServer(ABC):
     @staticmethod
     def respond(cmd: RedisCommand) -> str:
         try:
-            to_send = eval_and_respond_v2(cmd)
+            to_send = eval_and_respond(cmd)
             return to_send
         except Exception as e:
             raise e

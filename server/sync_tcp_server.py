@@ -1,8 +1,8 @@
 import socket
 import sys
 
-from src.core.eval import EvalException
-from src.server.tcp_server import TCPServer
+from core.eval import EvalException
+from server.tcp_server import TCPServer
 
 
 class SyncTCPServer(TCPServer):
