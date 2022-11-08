@@ -35,6 +35,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # print(float(time.time()) * 1000)
-    # print(type(dt.datetime.now().timestamp() * 1000))
     main()
