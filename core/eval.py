@@ -1,6 +1,6 @@
 import time
 from typing import List
-
+import datetime as dt
 from core.custom_types.redis_command import RedisCommand
 from core.resp import resp_encode
 from core.storage.storage import put, get, delete
@@ -17,13 +17,11 @@ def eval_ping(args: List[str]):
         encoded_data = resp_encode("PONG", False)
         return encoded_data
     else:
-        print(f'Encoding args for ping -- {args}')
         encoded_data = resp_encode(args[0], True)
         return encoded_data
 
 
 def eval_set(args):
-    print(args)
     if len(args) <= 1:
         raise EvalException("(error) ERR wrong number of arguments for 'set' command")
     key, val = args[0], args[1]
@@ -31,7 +29,6 @@ def eval_set(args):
     i = 2
     while i < len(args):
         if args[i] in ('EX', 'ex'):
-            print("here")
             i += 1
             if i == len(args):
                 raise EvalException("(error) ERR syntax error")
@@ -56,7 +53,7 @@ def eval_get(args):
     if val is None:
         return str.encode('$-1\r\n')
 
-    if val.expires_at != -1 and val.expires_at <= int(time.time() * 1000):
+    if val.expires_at != -1 and val.expires_at <= int(dt.datetime.now().timestamp() * 1000):
         return str.encode('$-1\r\n')
 
     return resp_encode(val.value, is_bulk=True)
@@ -71,7 +68,7 @@ def eval_ttl(args):
         return str.encode(':-2\r\n')
     if val.expires_at == -1:
         return str.encode(':-1\r\n')
-    duration_ms = val.expires_at - int(time.time() * 1000)
+    duration_ms = val.expires_at - int(dt.datetime.now().timestamp() * 1000)
     if duration_ms < 0:
         return str.encode(':-2\r\n')
     return resp_encode(int(duration_ms / 1000))
@@ -99,7 +96,7 @@ def eval_expire(args):
     if val is None:
         return str.encode(':0\r\n')
 
-    val.expires_at = int(time.time() * 1000) + expiry_duration_ms
+    val.expires_at = int(dt.datetime.now().timestamp() * 1000) + expiry_duration_ms
     return str.encode(':1\r\n')
 
 

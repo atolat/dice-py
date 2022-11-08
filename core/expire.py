@@ -8,7 +8,7 @@ def expire_sample():
     for key, val in get_items_from_storage():
         if val.expires_at != -1:
             limit -= 1
-            if dt.datetime.fromtimestamp(val.expires_at/1000.0) <= dt.datetime.utcnow():
+            if dt.datetime.fromtimestamp(val.expires_at/1000.0) <= dt.datetime.now():
                 delete(key)
                 count += 1
         if limit == 0:
