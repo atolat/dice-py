@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-import src.core.resp
-
 
 class Test(TestCase):
     def test_decode_simple_string(self):
@@ -9,7 +7,7 @@ class Test(TestCase):
             '+OK\r\n': 'OK'
         }
         for k, v in cases.items():
-            val = src.core.resp.resp_decode(k)
+            val = core.resp.resp_decode(k)
             self.assertEqual(val, v)
 
     def test_decode_error(self):
@@ -17,7 +15,7 @@ class Test(TestCase):
             "-Error message\r\n": "Error message"
         }
         for k, v in cases.items():
-            val = src.core.resp.resp_decode(k)
+            val = core.resp.resp_decode(k)
             self.assertEqual(val, v)
 
     def test_decode_int_64(self):
@@ -26,7 +24,7 @@ class Test(TestCase):
             ":1000\r\n": 1000,
         }
         for k, v in cases.items():
-            val = src.core.resp.resp_decode(k)
+            val = core.resp.resp_decode(k)
             self.assertEqual(val, v)
 
     def test_decode_bulk_string(self):
@@ -35,7 +33,7 @@ class Test(TestCase):
             "$0\r\n\r\n": "",
         }
         for k, v in cases.items():
-            val = src.core.resp.resp_decode(k)
+            val = core.resp.resp_decode(k)
             self.assertEqual(val, v)
 
     def test_decode_array(self):
@@ -47,5 +45,5 @@ class Test(TestCase):
             "*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n": [[1, 2, 3], ['Hello', 'World']]
         }
         for k, v in cases.items():
-            val = src.core.resp.resp_decode(k)
+            val = core.resp.resp_decode(k)
             self.assertEqual(val, v)

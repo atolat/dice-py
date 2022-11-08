@@ -4,8 +4,8 @@ import os.path
 from configparser import ConfigParser
 import socket
 
-from src.server.async_tcp_server import AsyncTCPServer
-from src.server.sync_tcp_server import SyncTCPServer
+from server.async_tcp_server import run_server
+from server.sync_tcp_server import SyncTCPServer
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     if args.mode == 'sync':
         SyncTCPServer.run_server(args.host, args.port)
     else:
-        AsyncTCPServer.run_server(args.host, args.port)
+        run_server(args.host, args.port)
 
 
 if __name__ == '__main__':
