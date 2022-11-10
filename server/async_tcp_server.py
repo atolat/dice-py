@@ -28,8 +28,8 @@ def _service_connection(sel, key, mask):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            cmd = TCPServer.read_command(recv_data)
-            response = TCPServer.respond(cmd)
+            cmd = TCPServer.read_commands(recv_data)
+            response = TCPServer.respond_pipe(cmd)
             data.outb += response
         else:
             print(f"Closing connection to {data.addr}")
@@ -37,6 +37,7 @@ def _service_connection(sel, key, mask):
             sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
+            print(f"Buffer data -- {data.outb}")
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
@@ -71,10 +72,10 @@ def run_server(host: str, port: str):
     try:
         while True:
             # Active mode delete
-            if dt.datetime.utcnow() >= last_delete_execution_time + dt.timedelta(milliseconds=delete_frequency):
-                print(f'Running scheduled delete')
-                delete_expired_keys()
-                last_delete_execution_time = dt.datetime.utcnow()
+            # if dt.datetime.utcnow() >= last_delete_execution_time + dt.timedelta(milliseconds=delete_frequency):
+            #     print(f'Running scheduled delete')
+            #     delete_expired_keys()
+            #     last_delete_execution_time = dt.datetime.utcnow()
 
             events = sel.select(timeout=None)
             for key, mask in events:
@@ -88,7 +89,7 @@ def run_server(host: str, port: str):
                         print(f"Exception while reading or decoding data, more info - {ee}")
                     except Exception as e:
                         key.fileobj.send(TCPServer.respond_error(str(e)))
-                        print(f"Exception while reading or decoding data, more info - {e}")
+                        print(f"Exception, more info - {e}")
     except KeyboardInterrupt:
         print("Caught keyboard interrupt, exiting")
     finally:
