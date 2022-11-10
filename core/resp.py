@@ -1,4 +1,7 @@
 # Helper functions for all datatypes
+from typing import List
+
+
 def _read_simple_string(data):
     # Simple string starts with +
     idx = 1
@@ -43,6 +46,7 @@ def _read_array(data):
 def _decode_helper(data: str, datatype=None):
     if len(data) == 0:
         return None, 0
+    print(data[0])
     match data[0], datatype:
         case '+', None:
             return _read_simple_string(data)
@@ -74,6 +78,22 @@ def resp_decode(data: bytes, datatype=None):
     data = data.decode('utf-8')
     value, _ = _decode_helper(data, datatype)
     return value
+
+
+def resp_decode_pipe(data):
+    if len(data) == 0:
+        return ""
+    data = data.decode('utf-8')
+    values: List[object] = []
+    idx = 0
+    print(f"Data: {data}")
+    while idx < len(data):
+        value, delta = _decode_helper(data[idx:])
+        # print(f"Value, delta: {value}, {delta}")
+        idx = idx + delta
+        values.append(value)
+    print(f"Values: {values}")
+    return values
 
 
 def resp_encode(data, is_bulk=False):

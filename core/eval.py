@@ -42,6 +42,7 @@ def eval_set(args):
             raise EvalException("(error) ERR syntax error")
 
     put(key, val, expiry_duration_ms)
+    print("I got here!")
     return str.encode('+OK\r\n')
 
 
@@ -116,3 +117,24 @@ def eval_and_respond(cmd: RedisCommand):
             return eval_expire(cmd.args)
         case _:
             return eval_ping(cmd.args)
+
+
+def eval_and_respond_pipe(cmds: List[RedisCommand]):
+    buffer = b''
+    for cmd in cmds:
+        match cmd.cmd:
+            case 'PING':
+                buffer += eval_ping(cmd.args)
+            case 'SET':
+                buffer += eval_set(cmd.args)
+            case 'GET':
+                buffer += eval_get(cmd.args)
+            case 'TTL':
+                buffer += eval_ttl(cmd.args)
+            case 'DEL':
+                buffer += eval_delete(cmd.args)
+            case 'EXPIRE':
+                buffer += eval_expire(cmd.args)
+            case _:
+                buffer += eval_ping(cmd.args)
+    return buffer

@@ -25,7 +25,7 @@ class SyncTCPServer(TCPServer):
                             if not data:
                                 break
                             # Try to decode the data to a redis command
-                            cmd = TCPServer.read_command(data)
+                            cmd = TCPServer.read_commands(data)
                             response = TCPServer.respond(cmd)
                             c.send(response)
                         except EvalException as ee:
