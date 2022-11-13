@@ -46,7 +46,6 @@ def _read_array(data):
 def _decode_helper(data: str, datatype=None):
     if len(data) == 0:
         return None, 0
-    print(data[0])
     match data[0], datatype:
         case '+', None:
             return _read_simple_string(data)
@@ -86,14 +85,15 @@ def resp_decode_pipe(data):
     data = data.decode('utf-8')
     values: List[object] = []
     idx = 0
-    print(f"Data: {data}")
     while idx < len(data):
         value, delta = _decode_helper(data[idx:])
-        # print(f"Value, delta: {value}, {delta}")
         idx = idx + delta
         values.append(value)
-    print(f"Values: {values}")
     return values
+
+
+def encode_string(s):
+    return f'${len(s)}\r\n{s}\r\n'
 
 
 def resp_encode(data, is_bulk=False):
@@ -102,9 +102,14 @@ def resp_encode(data, is_bulk=False):
             if not is_bulk:
                 return str.encode(f'+{data}\r\n')
             else:
-                return str.encode(f'${len(data)}\r\n{data}\r\n')
+                return str.encode(encode_string(data))
         case int():
             return str.encode(f':{data}\r\n')
+        case list():
+            buffer = ''
+            for d in data:
+                buffer += encode_string(d)
+            return str.encode(f'*{len(data)}\r\n{buffer}')
         case _:
             return str.encode('')
 

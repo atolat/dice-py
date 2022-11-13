@@ -1,9 +1,9 @@
-import time
 from typing import List
 import datetime as dt
-from core.custom_types.redis_command import RedisCommand
-from core.resp import resp_encode
-from core.storage.storage import put, get, delete
+
+from core import resp_encode, write_aof
+from custom_types import RedisCommand
+from storage import put, get, delete
 
 
 class EvalException(Exception):
@@ -42,7 +42,6 @@ def eval_set(args):
             raise EvalException("(error) ERR syntax error")
 
     put(key, val, expiry_duration_ms)
-    print("I got here!")
     return str.encode('+OK\r\n')
 
 
@@ -101,6 +100,11 @@ def eval_expire(args):
     return str.encode(':1\r\n')
 
 
+def eval_bgrewriteaof(args):
+    write_aof()
+    return str.encode('+OK\r\n')
+
+
 def eval_and_respond(cmd: RedisCommand):
     match cmd.cmd:
         case 'PING':
@@ -135,6 +139,8 @@ def eval_and_respond_pipe(cmds: List[RedisCommand]):
                 buffer += eval_delete(cmd.args)
             case 'EXPIRE':
                 buffer += eval_expire(cmd.args)
+            case 'BGREWRITEAOF':
+                buffer += eval_bgrewriteaof(cmd.args)
             case _:
                 buffer += eval_ping(cmd.args)
     return buffer
