@@ -1,4 +1,4 @@
-from core.storage.storage import get_items_from_storage, delete, get_storage_size
+from storage.storage import get_items_from_storage, delete, get_storage_size
 import datetime as dt
 
 
