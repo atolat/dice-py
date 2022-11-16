@@ -1,9 +1,9 @@
 from typing import List
 import datetime as dt
 
-from core import resp_encode, write_aof
+from core import *
 from custom_types import RedisCommand
-from storage import put, get, delete
+from storage import put, get, delete, new_storage_object
 
 
 class EvalException(Exception):
@@ -23,31 +23,32 @@ def eval_ping(args: List[str]):
 
 def eval_set(args):
     if len(args) <= 1:
-        raise EvalException("(error) ERR wrong number of arguments for 'set' command")
+        raise EvalException("ERR wrong number of arguments for 'set' command")
     key, val = args[0], args[1]
+    o_type, o_encoding = deduce_type_encoding(val)
     expiry_duration_ms, expiry_duration_sec = -1, -1
     i = 2
     while i < len(args):
         if args[i] in ('EX', 'ex'):
             i += 1
             if i == len(args):
-                raise EvalException("(error) ERR syntax error")
+                raise EvalException("ERR syntax error")
             try:
                 expiry_duration_sec = int(args[3])
             except ValueError:
-                raise EvalException("(error) ERR value is not an integer or out of range")
+                raise EvalException("ERR value is not an integer or out of range")
             expiry_duration_ms = expiry_duration_sec * 1000
             break
         else:
-            raise EvalException("(error) ERR syntax error")
+            raise EvalException("ERR syntax error")
 
-    put(key, val, expiry_duration_ms)
+    put(key, new_storage_object(value=val, duration_ms=expiry_duration_ms, o_type=o_type, o_encoding=o_encoding))
     return str.encode('+OK\r\n')
 
 
 def eval_get(args):
     if len(args) != 1:
-        raise EvalException("(error) ERR wrong number of arguments for 'set' command")
+        raise EvalException("ERR wrong number of arguments for 'set' command")
     key = args[0]
     val = get(key)
     if val is None:
@@ -61,7 +62,7 @@ def eval_get(args):
 
 def eval_ttl(args):
     if len(args) != 1:
-        raise EvalException("(error) ERR wrong number of arguments for 'ttl' command")
+        raise EvalException("ERR wrong number of arguments for 'ttl' command")
     key = args[0]
     val = get(key)
     if val is None:
@@ -82,9 +83,28 @@ def eval_delete(args):
     return resp_encode(num_delete)
 
 
+def eval_incr(args):
+    if len(args) != 1:
+        raise EvalException("ERR wrong number of arguments for 'incr' command")
+    key = args[0]
+    obj = get(key)
+    if obj is None:
+        obj = new_storage_object("0", -1, OBJ_TYPE_STRING, OBJ_ENCODING_INT)
+        put(key, obj)
+    try:
+        assert_type(obj.type_encoding, OBJ_TYPE_STRING)
+        assert_encoding(obj.type_encoding, OBJ_ENCODING_INT)
+    except TypeEncodingException as tte:
+        raise EvalException(str(tte))
+    i = int(obj.value, base=10)
+    i += 1
+    obj.value = str(i)
+    return resp_encode(i, True)
+
+
 def eval_expire(args):
     if len(args) <= 1:
-        raise EvalException("(error) ERR wrong number of arguments for 'ttl' command")
+        raise EvalException("ERR wrong number of arguments for 'expire' command")
     key = args[0]
     try:
         expiry_duration_sec = int(args[1])
@@ -139,6 +159,8 @@ def eval_and_respond_pipe(cmds: List[RedisCommand]):
                 buffer += eval_delete(cmd.args)
             case 'EXPIRE':
                 buffer += eval_expire(cmd.args)
+            case 'INCR':
+                buffer += eval_incr(cmd.args)
             case 'BGREWRITEAOF':
                 buffer += eval_bgrewriteaof(cmd.args)
             case _:

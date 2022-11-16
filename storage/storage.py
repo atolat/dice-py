@@ -1,3 +1,4 @@
+from ctypes import c_uint8
 from typing import Dict
 import datetime as dt
 
@@ -5,6 +6,14 @@ from config.config import key_limit, eviction_strategy
 from custom_types import StorageObject
 
 _hash_table: Dict[str, StorageObject] = {}
+
+
+def new_storage_object(value: object, duration_ms: int = -1, o_type: c_uint8 = 0,
+                       o_encoding: c_uint8 = 0) -> StorageObject:
+    expires_at = -1
+    if duration_ms > 0:
+        expires_at = int(dt.datetime.now().timestamp() * 1000) + duration_ms
+    return StorageObject(value=value, expires_at=expires_at, type_encoding=o_type | o_encoding)
 
 
 def get(key: str) -> StorageObject:
@@ -17,14 +26,10 @@ def get(key: str) -> StorageObject:
     return value
 
 
-def put(key: str, value: object, duration_ms: int = -1):
+def put(key: str, obj: StorageObject):
     # Try to evict before putting
     if get_storage_size() > key_limit:
         evict()
-    expires_at = -1
-    if duration_ms > 0:
-        expires_at = int(dt.datetime.now().timestamp() * 1000) + duration_ms
-    obj = StorageObject(value, expires_at)
     _hash_table[key] = obj
 
 
