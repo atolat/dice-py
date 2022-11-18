@@ -1,6 +1,22 @@
+# Host & port that run the redis server -- default: localhost:56789
 host = '0.0.0.0'
 port = 56789
+
+# TCP mode
+# - async - handles multiple concurrent clients
+# - sync - handles a single client
 mode = 'async'
-key_limit = 5000
-eviction_strategy = 'simple-first'
+
+# Number of keys in the DB, crossing this limit triggers an eviction
+key_limit = 100
+
+# % of keys to evict with the random eviction strategy
+eviction_ratio = 0.40
+
+# Supported Strategies
+# - simple-first
+# - allkeys-random
+eviction_strategy = 'allkeys-random'
+
+# Persistence file path
 aof_file = './dice-master.aof'

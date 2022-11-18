@@ -2,6 +2,7 @@ from typing import List
 import datetime as dt
 
 from core import *
+from core.stats import key_space
 from custom_types import RedisCommand
 from storage import put, get, delete, new_storage_object
 
@@ -125,6 +126,22 @@ def eval_bgrewriteaof(args):
     return str.encode('+OK\r\n')
 
 
+def eval_info(args):
+    buff = ''
+    buff += '# Keyspace\r\n'
+    for i in range(len(key_space)):
+        if 'keys' in key_space[i]:
+            buff += f'db{i}:keys={str(key_space[i]["keys"])},expire=0,avg_ttl=0\r\n'
+    return resp_encode(buff, True)
+
+
+def eval_client(args):
+    pass
+
+def eval_latency(args):
+    pass
+
+
 def eval_and_respond(cmd: RedisCommand):
     match cmd.cmd:
         case 'PING':
@@ -163,6 +180,12 @@ def eval_and_respond_pipe(cmds: List[RedisCommand]):
                 buffer += eval_incr(cmd.args)
             case 'BGREWRITEAOF':
                 buffer += eval_bgrewriteaof(cmd.args)
+            case 'INFO':
+                buffer += eval_info(cmd.args)
+            case 'CLIENT':
+                buffer += eval_client(cmd.args)
+            case 'LATENCY':
+                buffer += eval_latency(cmd.args)
             case _:
                 buffer += eval_ping(cmd.args)
     return buffer
