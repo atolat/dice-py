@@ -87,6 +87,7 @@ def run_server(host: str, port: str):
                         key.fileobj.send(TCPServer.respond_error(str(ee)))
                         print(f"Exception while reading or decoding data, more info - {ee}")
                     except Exception as e:
+                        print(e)
                         key.fileobj.send(TCPServer.respond_error(str(e)))
                         print(f"Exception, more info - {e}")
     except KeyboardInterrupt:

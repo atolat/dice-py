@@ -1,1 +1,1 @@
-from storage.storage import *
+from .storage import *

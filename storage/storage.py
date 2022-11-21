@@ -2,7 +2,9 @@ from ctypes import c_uint8
 from typing import Dict
 import datetime as dt
 
-from config.config import key_limit, eviction_strategy
+from config import eviction_ratio, key_limit, eviction_strategy
+from config.config import key_limit
+from core.stats import key_space
 from custom_types import StorageObject
 
 _hash_table: Dict[str, StorageObject] = {}
@@ -31,11 +33,17 @@ def put(key: str, obj: StorageObject):
     if get_storage_size() > key_limit:
         evict()
     _hash_table[key] = obj
+    # TODO: Make this more robust, this is a temporary hack
+    if 'keys' in key_space[0]:
+        key_space[0]['keys'] += 1
+    else:
+        key_space[0]['keys'] = 1
 
 
 def delete(key: str) -> bool:
     if key in _hash_table:
         del (_hash_table[key])
+        key_space[0]['keys'] -= 1
         return True
     return False
 
@@ -50,20 +58,33 @@ def get_keys_from_storage():
         yield key
 
 
+def get_random_key():
+    return next(iter(_hash_table))
+
+
 def get_storage_size() -> int:
     return len(_hash_table)
 
 
-# EVICTION #
 def evict_first():
     for k in get_keys_from_storage():
         delete(k)
         return
 
 
+def evict_all_keys_random():
+    evict_count = int(eviction_ratio * key_limit)
+    while evict_count >= 0:
+        key = get_random_key()
+        delete(key)
+        evict_count -= 1
+
+
 def evict():
     match eviction_strategy:
         case 'simple-first':
             return evict_first()
+        case 'allkeys-random':
+            return evict_all_keys_random()
         case _:
             pass
