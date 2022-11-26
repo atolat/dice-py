@@ -1,9 +1,13 @@
-from typing import List
-import datetime as dt
+"""
+Logic to parse arguments and evaluate redis commands
+"""
 
-from core import *
-from core.stats import key_space
-from custom_types import RedisCommand
+import datetime as dt
+from typing import List
+
+from core import key_space, resp_encode, deduce_type_encoding, assert_type, assert_encoding, TypeEncodingException, \
+    write_aof
+from custom_types import RedisCommand, OBJ_TYPE_STRING, OBJ_ENCODING_INT
 from storage import put, get, delete, new_storage_object
 
 
@@ -138,29 +142,17 @@ def eval_info(args):
 def eval_client(args):
     pass
 
+
 def eval_latency(args):
     pass
 
 
-def eval_and_respond(cmd: RedisCommand):
-    match cmd.cmd:
-        case 'PING':
-            return eval_ping(cmd.args)
-        case 'SET':
-            return eval_set(cmd.args)
-        case 'GET':
-            return eval_get(cmd.args)
-        case 'TTL':
-            return eval_ttl(cmd.args)
-        case 'DEL':
-            return eval_delete(cmd.args)
-        case 'EXPIRE':
-            return eval_expire(cmd.args)
-        case _:
-            return eval_ping(cmd.args)
-
-
-def eval_and_respond_pipe(cmds: List[RedisCommand]):
+def eval_and_respond_pipe(cmds: List[RedisCommand]) -> str:
+    """
+    Command parser - matches commands and passes args to command handler
+    :param cmds: Incoming redis command
+    :return: Processed response -- RESP encoded byte string
+    """
     buffer = b''
     for cmd in cmds:
         match cmd.cmd:

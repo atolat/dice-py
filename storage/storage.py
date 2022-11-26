@@ -1,8 +1,8 @@
+import datetime as dt
 from ctypes import c_uint8
 from typing import Dict
-import datetime as dt
 
-from config import eviction_ratio, key_limit, eviction_strategy
+from config import eviction_ratio, eviction_strategy
 from config.config import key_limit
 from core.stats import key_space
 from custom_types import StorageObject
