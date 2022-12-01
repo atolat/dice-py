@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from ctypes import c_uint32
 from typing import List, Dict
 
 from utils import get_idle_time
