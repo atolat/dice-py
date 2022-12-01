@@ -1,4 +1,7 @@
-# Helper functions for all datatypes
+"""
+RESP encoding for all supported datatypes
+# TODO - Add link to redis encoding doc
+"""
 from typing import List
 
 

@@ -8,7 +8,7 @@ port = 56789
 mode = 'async'
 
 # Number of keys in the DB, crossing this limit triggers an eviction
-key_limit = 100
+key_limit = 1000
 
 # % of keys to evict with the random eviction strategy
 eviction_ratio = 0.40
@@ -16,7 +16,11 @@ eviction_ratio = 0.40
 # Supported Strategies
 # - simple-first
 # - allkeys-random
-eviction_strategy = 'allkeys-random'
+# - allkeys-lru
+eviction_strategy = 'allkeys-lru'
 
 # Persistence file path
 aof_file = './dice-master.aof'
+
+# Interval between automatic deletions
+delete_frequency = 100000  # in milliseconds

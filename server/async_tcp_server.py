@@ -1,15 +1,14 @@
-import datetime
 import selectors
 import socket
 import types
 import datetime as dt
 from datetime import datetime
 
+from config import delete_frequency
 from core.eval import EvalException
 from core.expire import delete_expired_keys
 from server.tcp_server import TCPServer
 
-delete_frequency = 1000  # in milliseconds
 last_delete_execution_time: datetime = dt.datetime.utcnow()
 
 
@@ -43,7 +42,6 @@ def _service_connection(sel, key, mask):
 
 def run_server(host: str, port: str):
     global last_delete_execution_time
-    global delete_frequency
 
     print(f'Starting an asynchronous TCP server on HOST: {host}, PORT: {port}')
     max_clients = 2000
@@ -71,10 +69,10 @@ def run_server(host: str, port: str):
     try:
         while True:
             # Active mode delete
-            # if dt.datetime.utcnow() >= last_delete_execution_time + dt.timedelta(milliseconds=delete_frequency):
-            #     print(f'Running scheduled delete')
-            #     delete_expired_keys()
-            #     last_delete_execution_time = dt.datetime.utcnow()
+            if dt.datetime.utcnow() >= last_delete_execution_time + dt.timedelta(milliseconds=delete_frequency):
+                print(f'Running scheduled delete')
+                delete_expired_keys()
+                last_delete_execution_time = dt.datetime.utcnow()
 
             events = sel.select(timeout=None)
             for key, mask in events:

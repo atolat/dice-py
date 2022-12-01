@@ -1,12 +1,9 @@
 # Import the library
 import argparse
-import os.path
-from configparser import ConfigParser
 import socket
 
 from config.config import *
 from server.async_tcp_server import run_server
-from server.sync_tcp_server import SyncTCPServer
 
 
 def main():
@@ -20,7 +17,7 @@ def main():
     parser.add_argument('--mode', type=str, default=default_mode)
     args = parser.parse_args()
     if args.mode == 'sync':
-        SyncTCPServer.run_server(args.host, args.port)
+        run_server(args.host, args.port)
     else:
         run_server(args.host, args.port)
 

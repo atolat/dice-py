@@ -10,7 +10,7 @@ def deduce_type_encoding(val: str) -> Tuple[c_uint8, c_uint8]:
         int(val, base=10)
         return o_type, OBJ_ENCODING_INT
     except ValueError:
-        print("Not an int")
+        pass
     if len(val) <= 44:
         return o_type, OBJ_ENCODING_EMBSTR
     return o_type, OBJ_ENCODING_RAW
