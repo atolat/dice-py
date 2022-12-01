@@ -1,13 +1,18 @@
-from ctypes import c_uint8
-from dataclasses import dataclass
+from ctypes import c_uint8, c_uint32
+from dataclasses import dataclass, field
 from typing import Final
 
 
-@dataclass
+@dataclass(eq=True)
 class StorageObject:
-    value: object
+    value: object = field(compare=False)
     expires_at: int
-    type_encoding: c_uint8 # 4 bits represent the encoding, 4 bits represent the type
+    # Store the last accessed at timestamp -- redis allocates 24 bits for this
+    last_accessed_at: int
+    type_encoding: c_uint8  # 4 bits represent the encoding, 4 bits represent the type
+
+    def __hash__(self):
+        return id(self)
 
 
 OBJ_TYPE_STRING: Final[c_uint8] = 0 << 4

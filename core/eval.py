@@ -8,7 +8,7 @@ from typing import List
 from core import key_space, resp_encode, deduce_type_encoding, assert_type, assert_encoding, TypeEncodingException, \
     write_aof
 from custom_types import RedisCommand, OBJ_TYPE_STRING, OBJ_ENCODING_INT
-from storage import put, get, delete, new_storage_object
+from storage import put, get, delete, new_storage_object, has_expired, get_expiry, set_expiry, evict_all_keys_LRU
 
 
 class EvalException(Exception):
@@ -59,7 +59,7 @@ def eval_get(args):
     if val is None:
         return str.encode('$-1\r\n')
 
-    if val.expires_at != -1 and val.expires_at <= int(dt.datetime.now().timestamp() * 1000):
+    if has_expired(val):
         return str.encode('$-1\r\n')
 
     return resp_encode(val.value, is_bulk=True)
@@ -72,11 +72,13 @@ def eval_ttl(args):
     val = get(key)
     if val is None:
         return str.encode(':-2\r\n')
-    if val.expires_at == -1:
+    exp = get_expiry(val)
+    if exp is None:
         return str.encode(':-1\r\n')
-    duration_ms = val.expires_at - int(dt.datetime.now().timestamp() * 1000)
-    if duration_ms < 0:
+    # duration_ms = val.expires_at - int(dt.datetime.now().timestamp() * 1000)
+    if exp < int(dt.datetime.now().timestamp() * 1000):
         return str.encode(':-2\r\n')
+    duration_ms = exp - int(dt.datetime.now().timestamp() * 1000)
     return resp_encode(int(duration_ms / 1000))
 
 
@@ -120,8 +122,8 @@ def eval_expire(args):
     val = get(key)
     if val is None:
         return str.encode(':0\r\n')
-
-    val.expires_at = int(dt.datetime.now().timestamp() * 1000) + expiry_duration_ms
+    set_expiry(val, expiry_duration_ms)
+    # val.expires_at = int(dt.datetime.now().timestamp() * 1000) + expiry_duration_ms
     return str.encode(':1\r\n')
 
 
@@ -145,6 +147,11 @@ def eval_client(args):
 
 def eval_latency(args):
     pass
+
+
+def eval_LRU(args):
+    evict_all_keys_LRU()
+    return str.encode('+OK\r\n')
 
 
 def eval_and_respond_pipe(cmds: List[RedisCommand]) -> str:
@@ -178,6 +185,8 @@ def eval_and_respond_pipe(cmds: List[RedisCommand]) -> str:
                 buffer += eval_client(cmd.args)
             case 'LATENCY':
                 buffer += eval_latency(cmd.args)
+            case 'LRU':
+                buffer += eval_LRU(cmd.args)
             case _:
                 buffer += eval_ping(cmd.args)
     return buffer

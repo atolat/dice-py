@@ -3,7 +3,7 @@ Handles deletion of expired keys
 """
 from typing import Tuple
 
-from storage import get_items_from_storage, delete, get_storage_size
+from storage import get_items_from_storage, delete, get_storage_size, has_expired
 import datetime as dt
 
 
@@ -17,7 +17,7 @@ def _expire_sample() -> Tuple[float, int]:
     for key, val in get_items_from_storage():
         if val.expires_at != -1:
             limit -= 1
-            if dt.datetime.fromtimestamp(val.expires_at/1000.0) <= dt.datetime.now():
+            if has_expired(val):
                 delete(key)
                 count += 1
         if limit == 0:
